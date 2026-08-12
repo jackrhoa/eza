@@ -350,12 +350,17 @@ fn reorient(path: &Path) -> PathBuf {
         Ok(dir) => dir.join(path),
     };
 
-    path.canonicalize().unwrap_or(path)
+    match canonicalize_keeping_final_component(&path) {
+        Some(canonical) => canonical,
+        None => path.canonicalize().unwrap_or(path),
+    }
 }
 
 #[cfg(windows)]
 fn reorient(path: &Path) -> PathBuf {
-    let unc_path = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
+    let unc_path = canonicalize_keeping_final_component(path)
+        .or_else(|| path.canonicalize().ok())
+        .unwrap_or_else(|| path.to_path_buf());
     // On Windows UNC path is returned. We need to strip the prefix for it to work.
     let normal_path = unc_path
         .as_os_str()
@@ -363,6 +368,12 @@ fn reorient(path: &Path) -> PathBuf {
         .unwrap()
         .trim_start_matches("\\\\?\\");
     PathBuf::from(normal_path)
+}
+
+fn canonicalize_keeping_final_component(path: &Path) -> Option<PathBuf> {
+    let parent = path.parent()?;
+    let file_name = path.file_name()?;
+    Some(parent.canonicalize().ok()?.join(file_name))
 }
 
 /// The character to display if the file has been modified, but not staged.
