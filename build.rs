@@ -28,6 +28,7 @@ fn main() -> io::Result<()> {
 
     let tagline = "eza - A modern, maintained replacement for ls";
     let url = "https://github.com/eza-community/eza";
+    let modification_note = "Modified by jackrhoa";
 
     let ver = if is_debug_build() {
         format!(
@@ -48,6 +49,8 @@ fn main() -> io::Result<()> {
     } else {
         format!("{}\nv{}\n\\1;4;34m{}\\0m", tagline, version_string(), url)
     };
+
+    let ver = format!("{ver}\n{modification_note}");
 
     // We need to create these files in the Cargo output directory.
     let out = PathBuf::from(env::var("OUT_DIR").unwrap());
