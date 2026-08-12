@@ -15,6 +15,7 @@ use std::slice::Iter as SliceIter;
 use log::info;
 
 use crate::fs::File;
+use crate::fs::filter::IgnorePatterns;
 
 /// A **Dir** provides a cached list of the file paths in a directory that’s
 /// being listed.
@@ -95,6 +96,19 @@ impl Dir {
             deref_links,
             total_size,
         }
+    }
+
+    /// How many of this directory’s entries would be listed, judging by their
+    /// names alone. Unlike `files`, this queries no metadata for any of them,
+    /// so it stays cheap for the directories that `--collapse` exists for.
+    #[must_use]
+    pub fn count_files(&self, dots: DotFilter, ignore: &IgnorePatterns) -> usize {
+        self.contents
+            .iter()
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .filter(|name| dots.shows_dotfiles() || !name.starts_with('.'))
+            .filter(|name| !ignore.is_ignored(name))
+            .count()
     }
 
     /// Whether this directory contains a file with the given path.
@@ -251,7 +265,7 @@ pub enum DotFilter {
 
 impl DotFilter {
     /// Whether this filter should show dotfiles in a listing.
-    fn shows_dotfiles(self) -> bool {
+    pub(crate) fn shows_dotfiles(self) -> bool {
         match self {
             Self::JustFiles => false,
             Self::Dotfiles => true,

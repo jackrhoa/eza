@@ -42,6 +42,7 @@ impl FileFilter {
             sort_field: *matches.get_one("sort").unwrap(),
             dot_filter: DotFilter::deduce(matches, strict)?,
             ignore_patterns: IgnorePatterns::deduce(matches)?,
+            collapse_patterns: IgnorePatterns::deduce_collapse(matches)?,
             git_ignore: GitIgnore::deduce(matches),
         })
     }
@@ -124,9 +125,20 @@ impl IgnorePatterns {
     /// `--ignore-glob` argument’s value. This is a list of strings
     /// separated by pipe (`|`) characters, given in any order.
     pub fn deduce(matches: &ArgMatches) -> Result<Self, OptionsError> {
+        Self::deduce_from_arg(matches, "ignore-glob")
+    }
+
+    /// Determines the set of glob patterns to use based on the `--collapse`
+    /// argument’s value, using the same pipe-separated syntax as
+    /// `--ignore-glob`.
+    pub fn deduce_collapse(matches: &ArgMatches) -> Result<Self, OptionsError> {
+        Self::deduce_from_arg(matches, "collapse")
+    }
+
+    fn deduce_from_arg(matches: &ArgMatches, arg: &str) -> Result<Self, OptionsError> {
         // If there are no inputs, we return a set of patterns that doesn’t
         // match anything, rather than, say, `None`.
-        let Some(inputs) = matches.get_one::<String>("ignore-glob") else {
+        let Some(inputs) = matches.get_one::<String>(arg) else {
             return Ok(Self::empty());
         };
 
@@ -198,6 +210,34 @@ mod tests {
         let (_, mut e) = IgnorePatterns::parse_from_iter(pattern.to_string_lossy().split('|'));
         assert_eq!(
             IgnorePatterns::deduce(&mock_cli(vec!["--ignore-glob", "["])),
+            Err(e.pop().unwrap().into())
+        );
+    }
+
+    #[test]
+    fn deduce_collapse_patterns_empty() {
+        assert_eq!(
+            IgnorePatterns::deduce_collapse(&mock_cli(vec![""])),
+            Ok(IgnorePatterns::empty())
+        );
+    }
+
+    #[test]
+    fn deduce_collapse_patterns_two() {
+        let (res, _) = IgnorePatterns::parse_from_iter("node_modules|.git".split('|'));
+
+        assert_eq!(
+            IgnorePatterns::deduce_collapse(&mock_cli(vec!["--collapse", "node_modules|.git"])),
+            Ok(res)
+        );
+    }
+
+    #[test]
+    fn deduce_collapse_patterns_error() {
+        let (_, mut e) = IgnorePatterns::parse_from_iter("[".split('|'));
+
+        assert_eq!(
+            IgnorePatterns::deduce_collapse(&mock_cli(vec!["--collapse", "["])),
             Err(e.pop().unwrap().into())
         );
     }
@@ -384,6 +424,7 @@ mod tests {
                 sort_field: SortField::default(),
                 dot_filter: DotFilter::JustFiles,
                 ignore_patterns: IgnorePatterns::empty(),
+                collapse_patterns: IgnorePatterns::empty(),
                 git_ignore: GitIgnore::Off,
                 no_symlinks: false,
                 show_symlinks: false,
@@ -400,6 +441,7 @@ mod tests {
                 sort_field: SortField::default(),
                 dot_filter: DotFilter::JustFiles,
                 ignore_patterns: IgnorePatterns::empty(),
+                collapse_patterns: IgnorePatterns::empty(),
                 git_ignore: GitIgnore::Off,
                 no_symlinks: false,
                 show_symlinks: false,
@@ -416,6 +458,7 @@ mod tests {
                 sort_field: SortField::default(),
                 dot_filter: DotFilter::JustFiles,
                 ignore_patterns: IgnorePatterns::empty(),
+                collapse_patterns: IgnorePatterns::empty(),
                 git_ignore: GitIgnore::Off,
                 no_symlinks: false,
                 show_symlinks: false,
@@ -432,6 +475,7 @@ mod tests {
                 sort_field: SortField::default(),
                 dot_filter: DotFilter::JustFiles,
                 ignore_patterns: IgnorePatterns::empty(),
+                collapse_patterns: IgnorePatterns::empty(),
                 git_ignore: GitIgnore::Off,
                 no_symlinks: false,
                 show_symlinks: false,

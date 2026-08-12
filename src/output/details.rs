@@ -156,6 +156,7 @@ struct Egg<'a> {
     xattrs:    &'a [Attribute],
     errors:    Vec<(io::Error, Option<PathBuf>)>,
     dir:       Option<Dir>,
+    collapsed: Option<usize>,
     file:      &'a File<'a>,
 }
 
@@ -313,6 +314,7 @@ impl<'a> Render<'a> {
                     .map(|t| t.row_for_file(file, self.show_xattr_hint(file), color_scale_info));
 
                 let mut dir = None;
+                let mut collapsed = None;
                 let follow_links = self.opts.follow_links;
                 if let Some(r) = self.recurse
                     && (if follow_links {
@@ -326,7 +328,14 @@ impl<'a> Render<'a> {
                     trace!("matching on read_dir");
                     match file.read_dir() {
                         Ok(d) => {
-                            dir = Some(d);
+                            if self.filter.collapse_patterns.is_ignored(&file.name) {
+                                collapsed = Some(d.count_files(
+                                    self.filter.dot_filter,
+                                    &self.filter.ignore_patterns,
+                                ));
+                            } else {
+                                dir = Some(d);
+                            }
                         }
                         Err(e) => {
                             errors.push((e, None));
@@ -339,6 +348,7 @@ impl<'a> Render<'a> {
                     xattrs,
                     errors,
                     dir,
+                    collapsed,
                     file,
                 }
             })
@@ -355,13 +365,20 @@ impl<'a> Render<'a> {
                 t.add_widths(row);
             }
 
-            let file_name = self
+            let mut file_name = self
                 .file_style
                 .for_file(egg.file, self.theme)
                 .with_link_paths()
                 .with_mount_details(self.opts.mounts)
                 .paint()
                 .promote();
+
+            if let Some(count) = egg.collapsed {
+                let marker = format!(" [{count} {}]", if count == 1 { "entry" } else { "entries" });
+                let width = marker.len();
+                let style = self.theme.ui.punctuation.unwrap_or_default();
+                file_name.push(style.paint(marker), width);
+            }
 
             debug!("file_name {file_name:?}");
 

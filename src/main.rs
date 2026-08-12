@@ -395,6 +395,7 @@ impl Exa<'_> {
                             } else {
                                 f.is_directory()
                             }) && !f.is_all_all
+                                && !self.options.filter.collapse_patterns.is_ignored(&f.name)
                         })
                         .map(fs::File::to_dir)
                         .collect::<Vec<Dir>>();

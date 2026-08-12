@@ -82,6 +82,11 @@ pub struct FileFilter {
     /// patterns won’t be displayed in the list.
     pub ignore_patterns: IgnorePatterns,
 
+    /// Glob patterns of directories that should be listed, but whose contents
+    /// should not be recursed into. Any directory whose name matches *any* of
+    /// these patterns is shown as a single collapsed entry.
+    pub collapse_patterns: IgnorePatterns,
+
     /// Whether to ignore Git-ignored patterns.
     pub git_ignore: GitIgnore,
 
@@ -374,7 +379,7 @@ impl IgnorePatterns {
     }
 
     /// Test whether the given file should be hidden from the results.
-    fn is_ignored(&self, file: &str) -> bool {
+    pub fn is_ignored(&self, file: &str) -> bool {
         self.patterns.iter().any(|p| p.matches(file))
     }
 }
