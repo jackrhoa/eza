@@ -151,15 +151,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1700124898,
-        "narHash": "sha256-+5jKG/KmYOopvHwBAGu5iPVFqoug16Bkyk/InwB40tc=",
-        "owner": "eza-community",
+        "lastModified": 1783881854,
+        "narHash": "sha256-9/Oa461cPO6qK0Bhs4L8BdAaHGZpkCcWZBe62vorwEU=",
+        "owner": "jackrhoa",
         "repo": "powertest",
-        "rev": "c7b7d3038036d24dd5c77286e69a3d4b119bae81",
+        "rev": "044fc46290f25985e3d487bc294b957b7542fbe4",
         "type": "github"
       },
       "original": {
-        "owner": "eza-community",
+        "owner": "jackrhoa",
         "repo": "powertest",
         "type": "github"
       }

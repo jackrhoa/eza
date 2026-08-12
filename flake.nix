@@ -37,7 +37,7 @@
     };
 
     powertest = {
-      url = "github:eza-community/powertest";
+      url = "github:jackrhoa/powertest";
       inputs = {
         nixpkgs.follows = "nixpkgs";
         flake-utils.follows = "flake-utils";
@@ -90,7 +90,6 @@
 
         darwinBuildInputs = pkgs.lib.optionals pkgs.stdenv.isDarwin [
           pkgs.libiconv
-          pkgs.darwin.apple_sdk.frameworks.Security
         ];
 
         buildInputs = [ pkgs.zlib ] ++ darwinBuildInputs;
