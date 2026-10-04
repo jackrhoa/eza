@@ -69,7 +69,35 @@
       pre-commit-hooks,
       ...
     }:
-    flake-utils.lib.eachDefaultSystem (
+    {
+      overlays.default = nixpkgs.lib.composeManyExtensions [
+        (import rust-overlay)
+        (
+          final: prev:
+          let
+            toolchain = final.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+
+            naersk' = final.callPackage naersk {
+              cargo = toolchain;
+              rustc = toolchain;
+              clippy = toolchain;
+            };
+
+            buildInputs = [
+              final.zlib
+            ]
+            ++ final.lib.optionals final.stdenv.isDarwin [ final.libiconv ];
+          in
+          {
+            eza-local = import ./nix/eza.nix {
+              pkgs = final;
+              inherit naersk' buildInputs;
+            };
+          }
+        )
+      ];
+    }
+    // flake-utils.lib.eachDefaultSystem (
       system:
       let
         overlays = [ (import rust-overlay) ];
